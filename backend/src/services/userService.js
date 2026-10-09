@@ -3,12 +3,12 @@ const getAllUsers = async () => {
   return await userRepository.getAllUsers();
 };
 
-const getUserById = (id) => {
-  return userRepository.getUserById(id);
+const getUserById = async (id) => {
+  return await userRepository.getUserById(id);
 };
 
-const createUser = (name) => {
-  return userRepository.createUser(name);
+const createUser = async (name, email, phone) => {
+  return await userRepository.createUser(name, email, phone);
 };
 
 module.exports = {

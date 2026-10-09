@@ -1,6 +1,5 @@
-const users = require("../data/users");
 const pool = require("../db/pool");
-const bycrypt = require("bcrypt");
+const bcrypt = require("bcrypt");
 
 const getAllUsers = async () => {
   const result = await pool.query("SELECT * FROM users");
@@ -14,11 +13,11 @@ const getUserById = async (id) => {
         WHERE id = $1`,
     [id],
   );
-  return result.rows;
+  return result.rows[0];
 };
 
 const createUser = async (name, email, phone) => {
-  const passwordHash = await bycrypt.hash(email, 10);
+  const passwordHash = await bcrypt.hash(email, 10);
 
   const result = await pool.query(
     `INSERT INTO users(name,email,password_hash,phone)
