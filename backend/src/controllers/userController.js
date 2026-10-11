@@ -2,7 +2,19 @@ const userService = require("../services/userService");
 
 const getUsers = async (req, res, next) => {
   try {
-    const { search, minId, maxId, sort, order, page, limit } = req.query;
+    const {
+      search,
+      minId,
+      maxId,
+      sort,
+      order,
+      page,
+      limit,
+      role,
+      status,
+      createdAfter,
+      createdBefore,
+    } = req.query;
 
     const result = await userService.getAllUsers({
       search,
@@ -12,6 +24,10 @@ const getUsers = async (req, res, next) => {
       order,
       page,
       limit,
+      role,
+      status,
+      createdAfter,
+      createdBefore,
     });
     res.json({
       success: true,
@@ -24,6 +40,45 @@ const getUsers = async (req, res, next) => {
   }
 };
 
+const getUsersCursor = async (req, res, next) => {
+  try {
+    const { afterId, limit } = req.query;
+
+    const result = await userService.getUsersCursor({
+      afterId,
+      limit,
+    });
+
+    res.json({
+      success: true,
+      data: result.users,
+      pagination: result.pagination,
+      message: "Users fetched successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getUsersCreatedCursor = async (req, res, next) => {
+  try {
+    const { limit, afterId, afterCreatedAt } = req.query;
+    const results = await userService.getUsersCreatedCursor({
+      limit,
+      afterCreatedAt,
+      afterId,
+    });
+
+    res.status(200).json({
+      success: true,
+      data: results.users,
+      pagination: results.pagination,
+      message: "Users fetched successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 const getUserById = async (req, res, next) => {
   try {
     const id = Number(req.params.id);
@@ -56,6 +111,8 @@ const createUser = async (req, res, next) => {
 
 module.exports = {
   getUsers,
+  getUsersCursor,
   getUserById,
   createUser,
+  getUsersCreatedCursor,
 };

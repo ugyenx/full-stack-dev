@@ -9,6 +9,10 @@ const getAllUsers = async ({
   order,
   page,
   limit,
+  role,
+  status,
+  createdAfter,
+  createdBefore,
 }) => {
   const offset = (page - 1) * limit;
   const result = await userRepository.getAllUsers({
@@ -19,6 +23,10 @@ const getAllUsers = async ({
     order,
     limit,
     offset,
+    role,
+    createdAfter,
+    createdBefore,
+    status,
   });
   const totalPages = Math.ceil(result.total / limit);
   return {
@@ -31,7 +39,38 @@ const getAllUsers = async ({
     },
   };
 };
+const getUsersCursor = async ({ afterId, limit }) => {
+  const result = await userRepository.getUsersCursor({
+    afterId,
+    limit,
+  });
 
+  return {
+    users: result.users,
+    pagination: {
+      limit,
+      hasNextPage: result.hasNextPage,
+      nextCursor: result.nextCursor,
+    },
+  };
+};
+
+const getUsersCreatedCursor = async ({ afterId, limit, afterCreatedAt }) => {
+  const results = await userRepository.getUsersCreatedCursor({
+    afterId,
+    limit,
+    afterCreatedAt,
+  });
+
+  return {
+    users: results.users,
+    pagination: {
+      limit,
+      hasNextPage: results.hasNextPage,
+      nextCursor: results.nextCursor,
+    },
+  };
+};
 const getUserById = async (id) => {
   const user = await userRepository.getUserById(id);
   if (!user) {
@@ -58,6 +97,8 @@ const createUser = async (name, email, password, phone) => {
 
 module.exports = {
   getAllUsers,
+  getUsersCursor,
   getUserById,
   createUser,
+  getUsersCreatedCursor,
 };

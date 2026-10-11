@@ -1,7 +1,19 @@
 const AppError = require("../errors/AppError");
 
 const validateUserQuery = (req, res, next) => {
-  let { search, minId, maxId, sort, order, page, limit } = req.query;
+  let {
+    search,
+    minId,
+    maxId,
+    sort,
+    order,
+    page,
+    limit,
+    role,
+    status,
+    createdAfter,
+    createdBefore,
+  } = req.query;
 
   // search
   if (search !== undefined && typeof search !== "string") {
@@ -104,6 +116,63 @@ const validateUserQuery = (req, res, next) => {
     req.query.order = "asc";
   }
 
+  // role based filtering
+  const roles = ["admin", "user"];
+  if (role !== undefined) {
+    const normalizedRole = role.split(",").map((value) => value.trim());
+    for (let value of normalizedRole) {
+      if (!roles.includes(value)) {
+        return next(new AppError("Invalid role", 400, "INVALID_ROLE"));
+      }
+    }
+
+    req.query.role = normalizedRole;
+  }
+
+  // status based filtering
+  const allowedStatus = ["active", "inactive"];
+  if (status !== undefined) {
+    if (!allowedStatus.includes(status)) {
+      return next(new AppError("Status not allowed", 400, "INVALID_STATUS"));
+    }
+    req.query.status = status;
+  }
+
+  // Date validation
+  if (createdAfter !== undefined) {
+    const parsedDate = new Date(`${createdAfter}T00:00:00.000Z`);
+
+    // 2. Step 3 (Roundtrip Extract): Get ONLY the YYYY-MM-DD part from the object.
+    // If afterCreatedAt is "hello", calling .toISOString() here will instantly
+    // throw a RangeError and jump straight to the catch block!
+    const roundTripDateStr = parsedDate.toISOString().split("T")[0];
+
+    // 3. Compare with the original string to catch calendar overflows (like Feb 30th)
+    if (createdAfter !== roundTripDateStr) {
+      return next(new AppError("Invalid date format", 400, "INVALID_DATE"));
+    }
+  }
+  if (createdBefore !== undefined) {
+    const parsedDate = new Date(`${createdBefore}T00:00:00.000Z`);
+
+    // 2. Step 3 (Roundtrip Extract): Get ONLY the YYYY-MM-DD part from the object.
+    // If afterCreatedAt is "hello", calling .toISOString() here will instantly
+    // throw a RangeError and jump straight to the catch block!
+    const roundTripDateStr = parsedDate.toISOString().split("T")[0];
+
+    // 3. Compare with the original string to catch calendar overflows (like Feb 30th)
+    if (createdBefore !== roundTripDateStr) {
+      return next(new AppError("Invalid date format", 400, "INVALID_DATE"));
+    }
+  }
+
+  if (
+    createdAfter !== undefined &&
+    createdBefore !== undefined &&
+    createdAfter > createdBefore
+  ) {
+    return next(new AppError("Invalid dates", 400, "INVALID_DATE"));
+  }
   // Cross field validation
   if (minId !== undefined && maxId !== undefined) {
     if (minId > maxId) {
