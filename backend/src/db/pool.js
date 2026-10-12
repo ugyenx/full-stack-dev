@@ -6,5 +6,7 @@ const pool = new Pool({
   user: "postgres",
   database: "foodora_db",
 });
-
+pool.on("error", (err) => {
+  console.error("Unexpected PostgreSQL pool error:", err);
+});
 module.exports = pool;

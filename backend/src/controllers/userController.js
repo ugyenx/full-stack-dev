@@ -10,11 +10,14 @@ const getUsers = async (req, res, next) => {
       order,
       page,
       limit,
-      role,
       status,
       createdAfter,
       createdBefore,
     } = req.query;
+    const role = req.normalizedRole;
+    console.log("QUERY:", req.query);
+    console.log("PAGE:", page, typeof page);
+    console.log("LIMIT:", limit, typeof limit);
 
     const result = await userService.getAllUsers({
       search,

@@ -118,15 +118,14 @@ const validateUserQuery = (req, res, next) => {
 
   // role based filtering
   const roles = ["admin", "user"];
-  if (role !== undefined) {
+  if (role !== undefined && role !== null && role.trim() !== "") {
     const normalizedRole = role.split(",").map((value) => value.trim());
     for (let value of normalizedRole) {
       if (!roles.includes(value)) {
         return next(new AppError("Invalid role", 400, "INVALID_ROLE"));
       }
     }
-
-    req.query.role = normalizedRole;
+    req.normalizedRole = normalizedRole;
   }
 
   // status based filtering

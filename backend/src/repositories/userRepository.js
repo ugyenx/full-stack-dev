@@ -1,6 +1,6 @@
-const { useDebugValue } = require("react");
 const pool = require("../db/pool");
 const bcrypt = require("bcrypt");
+const QueryBuilder = require("../utils/queryBuilder");
 
 const getAllUsers = async ({
   search,
@@ -34,59 +34,64 @@ const getAllUsers = async ({
   const sortOrder = allowedOrder[order] || "ASC";
 
   const sortColumn = allowedSortColumns[sort] || "id";
+  const qb = new QueryBuilder();
 
-  const conditions = [];
-  const values = [];
   let query = `
     SELECT id,name,email,phone,created_at
     FROM users
     `;
 
   if (search) {
-    conditions.push(
-      `(name ILIKE $${values.length + 1} OR email ILIKE $${values.length + 1} )`,
+    const searchPlaceholder = qb.addValue(`%${search}%`);
+    qb.addCondition(
+      `(name ILIKE ${searchPlaceholder}
+      OR email ILIKE ${searchPlaceholder})`,
     );
-    values.push(`%${search}%`);
   }
   if (minId !== undefined) {
-    conditions.push(`id >= $${values.length + 1}`);
-    values.push(minId);
+    const minIdPlaceholder = qb.addValue(minId);
+    qb.addCondition(`id >= ${minIdPlaceholder}`);
   }
   if (maxId !== undefined) {
-    conditions.push(`id <= $${values.length + 1}`);
-    values.push(maxId);
+    const maxIdPlaceholder = qb.addValue(maxId);
+    qb.addCondition(`id <= ${maxIdPlaceholder}`);
   }
 
   if (role !== undefined && role.length > 0) {
-    const placeholders = role.map(
-      (_, index) => `$${values.length + index + 1}`,
-    );
-
-    // 2. Wrap placeholders in parentheses for valid SQL syntax
-    conditions.push(`role IN (${placeholders.join(",")})`);
-
-    values.push(...role);
+    qb.addIn("role", role);
   }
 
   if (status !== undefined) {
     const statusFilter = allowedStatus[status];
-    conditions.push(`status = $${values.length + 1}`);
-    values.push(statusFilter);
+    const statusPlaceholder = qb.addValue(statusFilter);
+    qb.addCondition(`
+      status = ${statusPlaceholder}
+      `);
   }
   if (createdBefore !== undefined) {
-    conditions.push(`created_at <= $${values.length + 1}`);
-    values.push(createdBefore);
+    const createdBeforePlaceholder = qb.addValue(createdBefore);
+    qb.addCondition(`created_at <= ${createdBeforePlaceholder}`);
   }
 
   if (createdAfter !== undefined) {
-    conditions.push(`created_at >= $${values.length + 1}`);
-    values.push(createdAfter);
+    const createdAfterPlaceholder = qb.addValue(createdAfter);
+    qb.addCondition(`
+      created_at >= ${createdAfterPlaceholder}`);
   }
 
   //cursor pagination
 
-  if (conditions.length > 0) {
-    query += `WHERE ${conditions.join(" AND ")}`;
+  let countQuery = `
+    SELECT COUNT(*)
+    FROM users
+    `;
+
+  const values = [...qb.values];
+
+  const whereClause = qb.getWhereClause();
+  if (whereClause) {
+    query += ` ${whereClause}`;
+    countQuery += ` ${whereClause}`;
   }
 
   query += `
@@ -94,20 +99,11 @@ const getAllUsers = async ({
     LIMIT $${values.length + 1}
     OFFSET $${values.length + 2}
     `;
-  const countValues = [...values];
   values.push(limit, offset);
-
-  let countQuery = `
-    SELECT COUNT(*)
-    FROM users
-    `;
-  if (conditions.length > 0) {
-    countQuery += `WHERE ${conditions.join(" AND ")}`;
-  }
 
   const result = await pool.query(query, values);
 
-  const countResult = await pool.query(countQuery, countValues);
+  const countResult = await pool.query(countQuery, qb.values);
 
   return {
     users: result.rows,
