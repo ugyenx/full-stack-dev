@@ -2,6 +2,7 @@ const authRepository = require("../repositories/authRepository");
 const bcrypt = require("bcrypt");
 const AppError = require("../errors/AppError");
 const { generateAccessToken } = require("../utils/jwt");
+
 const login = async ({ email, password }) => {
   const user = await authRepository.getUserByEmailForLogin(email);
   if (!user) {
@@ -20,4 +21,8 @@ const login = async ({ email, password }) => {
   };
 };
 
-module.exports = { login };
+const getUser = async (userId) => {
+  const user = await authRepository.getUser(userId);
+  return user;
+};
+module.exports = { login, getUser };

@@ -16,4 +16,20 @@ const login = async (req, res, next) => {
   }
 };
 
-module.exports = { login };
+const getUser = async (req, res, next) => {
+  try {
+    const userId = req.user.userId;
+    const user = await authService.getUser(userId);
+    res.status(200).json({
+      success: true,
+      data: {
+        user,
+      },
+      message: "Authorization successfull",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { login, getUser };

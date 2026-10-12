@@ -1,10 +1,10 @@
-// const { generateAccessToken } = require("./jwt");
+const { generateAccessToken } = require("./jwt");
 
-// const user = {
-//   id: 1,
-//   name: "ugyen",
-//   email: "udeeadnres2020@gmail.com",
-// };
+const user = {
+  id: 1,
+  name: "ugyen",
+  email: "udeeadnres2020@gmail.com",
+};
 
-// const token = generateAccessToken(user);
-// console.log(token);
+const token = generateAccessToken(user);
+console.log(token);
