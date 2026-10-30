@@ -71,13 +71,21 @@ const getUsersCreatedCursor = async ({ afterId, limit, afterCreatedAt }) => {
     },
   };
 };
-const getUserById = async (id) => {
-  const user = await userRepository.getUserById(id);
-  if (!user) {
+const getUserById = async ({ authenticatedUserId, requestedUserId }) => {
+  const authenticatedUser =
+    await userRepository.getUserById(authenticatedUserId);
+
+  if (!authenticatedUser) {
     throw new AppError("User not found", 404, "USER_NOT_FOUND");
   }
 
-  return user;
+  const isOwner = authenticatedUserId === requestedUserId;
+  const isAdmin = authenticatedUser.role === "admin";
+  if (!isOwner && !isAdmin) {
+    throw new AppError("Unauthorized", 403, "FORBIDDEN");
+  }
+
+  return await userRepository.getUserById(requestedUserId);
 };
 
 const createUser = async (name, email, password, phone) => {
@@ -95,10 +103,19 @@ const createUser = async (name, email, password, phone) => {
   }
 };
 
+const deleteUser = async (id) => {
+  const response = await userRepository.deleteUser(id);
+  if (!response) {
+    throw new AppError("User doesn't  exists", 404, "USER_NOT_FOUND");
+  }
+  return response;
+};
+
 module.exports = {
   getAllUsers,
   getUsersCursor,
   getUserById,
   createUser,
+  deleteUser,
   getUsersCreatedCursor,
 };

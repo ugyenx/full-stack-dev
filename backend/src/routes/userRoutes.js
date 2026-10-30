@@ -13,6 +13,7 @@ const {
   getUserById,
   createUser,
   getUsersCreatedCursor,
+  deleteUser,
 } = require("../controllers/userController");
 const { authorize } = require("../middleware/authorize");
 
@@ -30,7 +31,8 @@ router.get("/admin-test", authenticate, authorize("manager"), (req, res) => {
   });
 });
 
-router.get("/:id", getUserById);
+router.get("/:id", authenticate, getUserById);
+router.delete("/:id", authenticate, authorize("admin"), deleteUser);
 
 router.post("/", validateCreateUser, createUser);
 

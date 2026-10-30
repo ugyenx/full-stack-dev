@@ -192,7 +192,7 @@ const getUsersCreatedCursor = async ({ afterId, limit, afterCreated_at }) => {
 
 const getUserById = async (id) => {
   const result = await pool.query(
-    `SELECT id,name,email
+    `SELECT id,name,email,role,phone,created_at
         FROM users
         WHERE id = $1`,
     [id],
@@ -212,10 +212,23 @@ const createUser = async (name, email, password, phone) => {
   return result.rows[0];
 };
 
+const deleteUser = async (id) => {
+  const response = await pool.query(
+    `DELETE FROM users
+    WHERE id = $1`,
+    [id],
+  );
+  if (response.rowCount === 0) {
+    return false;
+  }
+  return true;
+};
+
 module.exports = {
   getAllUsers,
   getUserById,
   createUser,
   getUsersCursor,
   getUsersCreatedCursor,
+  deleteUser,
 };

@@ -84,8 +84,12 @@ const getUsersCreatedCursor = async (req, res, next) => {
 };
 const getUserById = async (req, res, next) => {
   try {
-    const id = Number(req.params.id);
-    const user = await userService.getUserById(id);
+    const authenticatedUserId = Number(req.user.userId);
+    const requestedUserId = Number(req.params.id);
+    const user = await userService.getUserById({
+      authenticatedUserId,
+      requestedUserId,
+    });
     res.json({
       success: true,
       data: user,
@@ -111,6 +115,18 @@ const createUser = async (req, res, next) => {
     next(error);
   }
 };
+const deleteUser = async (req, res, next) => {
+  try {
+    const requestedUserId = Number(req.params.id);
+    await userService.deleteUser(requestedUserId);
+    res.status(200).json({
+      success: true,
+      message: "User successfully deleted",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
 module.exports = {
   getUsers,
@@ -118,4 +134,5 @@ module.exports = {
   getUserById,
   createUser,
   getUsersCreatedCursor,
+  deleteUser,
 };

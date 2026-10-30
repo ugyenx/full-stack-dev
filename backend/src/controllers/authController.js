@@ -18,6 +18,7 @@ const login = async (req, res, next) => {
 
 const getUser = async (req, res, next) => {
   try {
+    console.log(req.user);
     const userId = req.user.userId;
     const user = await authService.getUser(userId);
     res.status(200).json({

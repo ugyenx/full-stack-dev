@@ -21,6 +21,7 @@ const authenticate = (req, res, next) => {
     }
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = decoded;
+    console.log(decoded);
     next();
   } catch (error) {
     return next(new AppError("Invalid or expired token", 401, "INVALID_TOKEN"));
