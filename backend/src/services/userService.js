@@ -111,6 +111,76 @@ const deleteUser = async (id) => {
   return response;
 };
 
+//Updating user , role based privildge to update
+const updateUser = async ({
+  authenticatedUserId,
+  requestedUserId,
+  updates,
+}) => {
+  const authenticatedUser =
+    await userRepository.getUserById(authenticatedUserId);
+  if (!authenticatedUser) {
+    throw new AppError("User not found", 404, "USER_NOT_FOUND");
+  }
+
+  const requestedUser = await userRepository.getUserById(requestedUserId);
+
+  const isOwner = authenticatedUserId === requestedUserId;
+  const isAdmin = authenticatedUser.role === "admin";
+  if (!isOwner && !isAdmin) {
+    throw new AppError(
+      "You are not allowed to perform this action",
+      403,
+      "FORBIDDEN",
+    );
+  }
+
+  if (Object.keys(updates).length === 0) {
+    throw new AppError(
+      "At least one field is required",
+      400,
+      "NO_FIELDS_TO_UPDATE",
+    );
+  }
+
+  const allowedFields = isAdmin
+    ? ["name", "phone", "role", "status"]
+    : ["name", "phone"];
+
+  const requestedFields = Object.keys(updates);
+  const invalidFields = requestedFields.filter(
+    (field) => !allowedFields.includes(field),
+  );
+
+  if (invalidFields.length > 0) {
+    throw new AppError(
+      `You cannot update this field: ${invalidFields.join(", ")}`,
+      403,
+      "FORBIDDEN",
+    );
+  }
+
+  if (updates.role !== undefined) {
+    if (!["admin", "user"].includes(updates.role)) {
+      throw new AppError("Invalid role", 400, "INVALID_ROLE");
+    }
+  }
+
+  if (updates.status !== undefined) {
+    if (!["active", "inactive"].includes(updates.status)) {
+      throw new AppError("Invalid status", 400, "INVALID_STATUS");
+    }
+  }
+
+  const updatedUser = await userRepository.updateUser(requestedUserId, updates);
+
+  if (!updatedUser) {
+    throw new AppError("User not found", 404, "USER_NOT_FOUND");
+  }
+
+  return updatedUser;
+};
+
 module.exports = {
   getAllUsers,
   getUsersCursor,
@@ -118,4 +188,5 @@ module.exports = {
   createUser,
   deleteUser,
   getUsersCreatedCursor,
+  updateUser,
 };

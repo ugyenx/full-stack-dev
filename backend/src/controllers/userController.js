@@ -1,3 +1,4 @@
+const AppError = require("../errors/AppError");
 const userService = require("../services/userService");
 
 const getUsers = async (req, res, next) => {
@@ -102,7 +103,7 @@ const getUserById = async (req, res, next) => {
 
 const createUser = async (req, res, next) => {
   try {
-    const { name, email, password, phone } = req.body;
+    const { name, email, password, phone } = req.validatedBody;
 
     const user = await userService.createUser(name, email, password, phone);
 
@@ -127,6 +128,36 @@ const deleteUser = async (req, res, next) => {
     next(error);
   }
 };
+const updateUser = async (req, res, next) => {
+  try {
+    const authenticatedUserId = Number(req.user.userId);
+    const requestedUserId = Number(req.params.id);
+    const updates = req.body;
+
+    if (!Number.isInteger(requestedUserId) || requestedUserId <= 0) {
+      throw new AppError("Invalid user id", 400, "INVALID_USER_ID");
+    }
+
+    if (!updates || typeof updates !== "object" || Array.isArray(updates)) {
+      throw new AppError("Request body must be an object", 400, "INVALID_BODY");
+    }
+
+    const updatedUser = await userService.updateUser({
+      authenticatedUserId,
+      requestedUserId,
+      updates,
+    });
+    console.log(updatedUser);
+
+    res.status(200).json({
+      success: true,
+      message: "User updated successfully",
+      data: updatedUser,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
 module.exports = {
   getUsers,
@@ -135,4 +166,5 @@ module.exports = {
   createUser,
   getUsersCreatedCursor,
   deleteUser,
+  updateUser,
 };

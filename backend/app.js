@@ -1,15 +1,26 @@
 require("dotenv").config();
 
 const express = require("express");
+const cookieParser = require("cookie-parser");
 const cors = require("cors");
+const helmet = require("helmet");
 const userRoutes = require("./src/routes/userRoutes");
 const authRoutes = require("./src/routes/authRoute");
+const { apiLimiter } = require("./src/middleware/rateLimitMiddleware");
 const app = express();
+app.use(helmet());
 
 // app.set("query parser", "extended");
-
-app.use(cors());
+const corsOptions = {
+  origin: process.env.CLIENT_ORIGIN,
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token"],
+};
+app.use(cors(corsOptions));
+app.use(cookieParser());
 app.use(express.json());
+app.use(apiLimiter);
 
 // First Router
 app.use("/api/users", userRoutes);

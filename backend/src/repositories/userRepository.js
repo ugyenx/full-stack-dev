@@ -1,6 +1,7 @@
 const pool = require("../db/pool");
 const bcrypt = require("bcrypt");
 const QueryBuilder = require("../utils/queryBuilder");
+const AppError = require("../errors/AppError");
 
 const getAllUsers = async ({
   search,
@@ -224,6 +225,42 @@ const deleteUser = async (id) => {
   return true;
 };
 
+const updateUser = async (userId, updates) => {
+  const allowedColumns = {
+    name: "name",
+    phone: "phone",
+    role: "role",
+    status: "status",
+  };
+
+  const fields = Object.keys(updates);
+  const values = [];
+  const setClauses = [];
+
+  fields.forEach((field) => {
+    const column = allowedColumns[field];
+    if (!column) {
+      throw new Error(`Invalid update field: ${field}`);
+    }
+
+    values.push(updates[field]);
+    setClauses.push(`${column} = $${values.length}`);
+  });
+
+  values.push(userId);
+  const query = `
+  UPDATE users
+  SET ${setClauses.join(", ")}
+  WHERE id = $${values.length}
+  RETURNING id,name, email, phone, role,  created_at
+  `;
+  console.log(query);
+
+  const result = await pool.query(query, values);
+  console.log(result.rows[0]);
+  return result.rows[0] || null;
+};
+
 module.exports = {
   getAllUsers,
   getUserById,
@@ -231,4 +268,5 @@ module.exports = {
   getUsersCursor,
   getUsersCreatedCursor,
   deleteUser,
+  updateUser,
 };
