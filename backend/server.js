@@ -1,7 +1,6 @@
 const app = require("./app");
+const config = require("./src/config/env");
 
-const PORT = 3000;
-
-app.listen(PORT, () => {
-  console.log("Server running");
+app.listen(config.PORT, config.HOST, () => {
+  console.log(`Server running at http://${config.HOST}:${config.PORT}`);
 });

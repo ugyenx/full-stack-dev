@@ -1,4 +1,7 @@
+const config = require("../config/env");
 const authService = require("../services/authService");
+const { generateCsrfToken } = require("../utils/csrf");
+const logger = require("../utils/logger");
 
 const login = async (req, res, next) => {
   try {
@@ -8,7 +11,16 @@ const login = async (req, res, next) => {
 
     res.cookie("accessToken", result.accessToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: config.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 15 * 60 * 1000,
+    });
+
+    const csrfToken = generateCsrfToken(result.accessToken);
+    res.cookie("csrfToken", csrfToken, {
+      httpOnly: false,
+      secure: config.NODE_ENV === "production",
       sameSite: "lax",
       path: "/",
       maxAge: 15 * 60 * 1000,
@@ -20,6 +32,7 @@ const login = async (req, res, next) => {
         user: result.user,
       },
     });
+    logger.info("User logged in Successfully");
   } catch (error) {
     next(error);
   }
@@ -43,11 +56,16 @@ const getUser = async (req, res, next) => {
 };
 
 const logout = async (req, res) => {
-  res.clearCookie("accessToken", {
+  const cookieOptions = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: config.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
+  };
+  res.clearCookie("accessToken", cookieOptions);
+  res.clearCookie("csrfToken", {
+    ...cookieOptions,
+    httpOnly: false,
   });
 
   return res.status(200).json({
